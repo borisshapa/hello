@@ -56,13 +56,15 @@ public class HelloUDPNonblockingServer implements HelloServer {
 
     private void write(final SelectionKey key) {
         final DatagramChannel channel = (DatagramChannel) key.channel();
-        while (!toWrite.isEmpty()) {
-            final DatagramPacket packet = toWrite.poll();
-            if (!Util.send(channel, packet.getData(), packet.getSocketAddress(), CLOSE_CHANNEL)) {
-                return;
-            }
+        if (toWrite.isEmpty()) {
+            key.interestOps(SelectionKey.OP_READ);
+            return;
         }
-        key.interestOps(SelectionKey.OP_READ);
+        final DatagramPacket packet = toWrite.poll();
+        if (!Util.send(channel, packet.getData(), packet.getSocketAddress(), CLOSE_CHANNEL)) {
+            return;
+        }
+        key .interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
     private void run() {
